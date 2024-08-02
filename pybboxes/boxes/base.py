@@ -55,6 +55,43 @@ class Box:
     def iou(self, other: "Box") -> float:
         return self.intersection(other) / self.union(other)
 
+    def is_inside_of(self, other: "Box", tolerance: float = 0.0) -> bool:
+        """
+        Check if the current box is inside another box with an optional tolerance.
+
+        Parameters:
+        other (Box): The parent box to check against.
+        tolerance (float): A percentage (0.0 to 1.0) of the parent box size to allow as margin of error.
+                           For example, a tolerance of 0.1 allows a 10% margin of error.
+
+        Returns:
+        bool: True if the current box is inside the adjusted parent box, False otherwise.
+
+        Usage:
+        >>> A = Box(10, 10, 65, 65)
+        >>> B = Box(0, 0, 60, 60)
+        >>> A.is_inside_of(B, tolerance=0.0)
+        False
+        >>> A.is_inside_of(B, tolerance=0.1)
+        True
+
+        In this example, the tolerance of 0.1 (10%) allows the parent box B to be expanded by 10% of its size
+        in all directions, making it possible for the child box A to be considered inside B even though it
+        slightly exceeds the original boundaries of B.
+        """
+        tolerance_x = (other.x_br - other.x_tl) * tolerance
+        tolerance_y = (other.y_br - other.y_tl) * tolerance
+
+        adjusted_x_tl = max(0, other.x_tl - tolerance_x)
+        adjusted_y_tl = max(0, other.y_tl - tolerance_y)
+        adjusted_x_br = other.x_br + tolerance_x
+        adjusted_y_br = other.y_br + tolerance_y
+
+        return (self.x_tl >= adjusted_x_tl and
+                self.y_tl >= adjusted_y_tl and
+                self.x_br <= adjusted_x_br and
+                self.y_br <= adjusted_y_br)
+
 
 class BaseBoundingBox(Box, ABC):
     def __init__(
